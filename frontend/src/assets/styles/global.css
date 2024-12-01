@@ -1,0 +1,54 @@
+/* Global styles */
+:root {
+  --primary-color: #2E7D32;
+  --secondary-color: #FF6D00;
+  --background-color: #F5F5F5;
+  --text-color: #333333;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Roboto', sans-serif;
+  background-color: var(--background-color);
+  color: var(--text-color);
+}
+
+.app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+main {
+  flex: 1;
+  padding: 24px;
+}
+
+/* Responsive breakpoints */
+@media (max-width: 600px) {
+  main {
+    padding: 16px;
+  }
+}
+
+/* Common utility classes */
+.text-center {
+  text-align: center;
+}
+
+.full-width {
+  width: 100%;
+}
+
+.mb-2 {
+  margin-bottom: 16px;
+}
+
+.mt-2 {
+  margin-top: 16px;
+}
+
+.p-2 {
+  padding: 16px;
+}

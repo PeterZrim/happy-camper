@@ -1,0 +1,110 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block extrastyle %}
+<style>
+    .dashboard-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+    .stat-card {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .stat-card h3 {
+        margin-top: 0;
+        color: #666;
+    }
+    .stat-value {
+        font-size: 24px;
+        font-weight: bold;
+        color: #2c3e50;
+    }
+    .recent-bookings, .popular-campsites {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        margin-bottom: 30px;
+    }
+    .booking-list, .campsite-list {
+        list-style: none;
+        padding: 0;
+    }
+    .booking-item, .campsite-item {
+        padding: 10px;
+        border-bottom: 1px solid #eee;
+    }
+    .booking-item:last-child, .campsite-item:last-child {
+        border-bottom: none;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <h1>Campsite Owner Dashboard</h1>
+    
+    <div class="dashboard-stats">
+        <div class="stat-card">
+            <h3>Total Campsites</h3>
+            <div class="stat-value">{{ stats.total_campsites }}</div>
+        </div>
+        <div class="stat-card">
+            <h3>Total Spots</h3>
+            <div class="stat-value">{{ stats.total_spots }}</div>
+        </div>
+        <div class="stat-card">
+            <h3>Recent Bookings</h3>
+            <div class="stat-value">{{ stats.recent_bookings }}</div>
+        </div>
+        <div class="stat-card">
+            <h3>Pending Bookings</h3>
+            <div class="stat-value">{{ stats.pending_bookings }}</div>
+        </div>
+        <div class="stat-card">
+            <h3>Average Rating</h3>
+            <div class="stat-value">{{ stats.average_rating|floatformat:1 }}/5</div>
+        </div>
+        <div class="stat-card">
+            <h3>30-Day Revenue</h3>
+            <div class="stat-value">${{ stats.total_revenue|floatformat:2 }}</div>
+        </div>
+    </div>
+    
+    <div class="dashboard-content">
+        <div class="recent-bookings">
+            <h2>Recent Bookings</h2>
+            <ul class="booking-list">
+                {% for booking in recent_bookings %}
+                <li class="booking-item">
+                    <strong>{{ booking.user.username }}</strong> -
+                    {{ booking.campsite.name }} ({{ booking.check_in_date }} to {{ booking.check_out_date }})
+                    <span class="status status-{{ booking.status }}">{{ booking.status }}</span>
+                </li>
+                {% empty %}
+                <li>No recent bookings</li>
+                {% endfor %}
+            </ul>
+        </div>
+        
+        <div class="popular-campsites">
+            <h2>Most Popular Campsites</h2>
+            <ul class="campsite-list">
+                {% for campsite in popular_campsites %}
+                <li class="campsite-item">
+                    <strong>{{ campsite.name }}</strong>
+                    <span class="booking-count">{{ campsite.booking_count }} bookings</span>
+                </li>
+                {% empty %}
+                <li>No campsite data available</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}
