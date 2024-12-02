@@ -2,41 +2,19 @@ import axios from 'axios'
 
 // Create axios instance with default config
 const api = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || 'http://localhost:8000',
-  withCredentials: true,
+  baseURL: import.meta.env.VITE_API_URL,
+  timeout: parseInt(import.meta.env.VITE_API_TIMEOUT),
   headers: {
     'Content-Type': 'application/json',
   },
 })
 
-// Function to get CSRF token from cookies
-function getCsrfToken() {
-  const name = 'csrftoken='
-  const decodedCookie = decodeURIComponent(document.cookie)
-  const cookieArray = decodedCookie.split(';')
-  
-  for (let cookie of cookieArray) {
-    cookie = cookie.trim()
-    if (cookie.indexOf(name) === 0) {
-      return cookie.substring(name.length, cookie.length)
-    }
-  }
-  return null
-}
-
-// Add request interceptor to add auth token and CSRF token
+// Add request interceptor to add auth token
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token')
+    const token = localStorage.getItem('access_token')
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
-    }
-    // Only add CSRF token for non-GET requests
-    if (config.method !== 'get') {
-      const csrfToken = getCsrfToken()
-      if (csrfToken) {
-        config.headers['X-CSRFToken'] = csrfToken
-      }
     }
     return config
   },
@@ -45,39 +23,104 @@ api.interceptors.request.use(
   }
 )
 
-// Add response interceptor to handle common errors
+// Add response interceptor to handle token refresh
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
-    if (error.response) {
-      // Handle specific error cases
-      switch (error.response.status) {
-        case 403:
-          if (error.response.data.detail === 'CSRF Failed: CSRF token missing or incorrect') {
-            // Refresh the page to get a new CSRF token
-            window.location.reload()
-            return
-          }
-          break
-        case 401:
-          // Handle unauthorized access
-          localStorage.removeItem('token')
-          window.location.href = '/login'
-          break
-        default:
-          break
+  async (error) => {
+    const originalRequest = error.config
+
+    // If error is 401 and we haven't tried to refresh token yet
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true
+
+      try {
+        const refreshToken = localStorage.getItem('refresh_token')
+        if (!refreshToken) {
+          throw new Error('No refresh token')
+        }
+
+        // Try to refresh token
+        const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/auth/token/refresh/`, {
+          refresh: refreshToken
+        })
+
+        const { access } = response.data
+        localStorage.setItem('access_token', access)
+
+        // Retry original request with new token
+        originalRequest.headers.Authorization = `Bearer ${access}`
+        return api(originalRequest)
+      } catch (error) {
+        // If refresh fails, logout user
+        localStorage.removeItem('access_token')
+        localStorage.removeItem('refresh_token')
+        window.location.href = '/login'
+        return Promise.reject(error)
       }
     }
+
     return Promise.reject(error)
   }
 )
 
 // Auth API
 export const authAPI = {
-  login: (credentials) => api.post('/auth/login/', credentials),
-  register: (userData) => api.post('/auth/register/', userData),
-  logout: () => api.post('/auth/logout/'),
-  refreshToken: () => api.post('/auth/token/refresh/'),
+  async login(credentials) {
+    const response = await api.post('/api/auth/token/', credentials)
+    const { access, refresh, user } = response.data
+    localStorage.setItem('access_token', access)
+    localStorage.setItem('refresh_token', refresh)
+    return user
+  },
+
+  async register(userData) {
+    const response = await api.post('/api/auth/register/', userData)
+    const { tokens, user } = response.data
+    localStorage.setItem('access_token', tokens.access)
+    localStorage.setItem('refresh_token', tokens.refresh)
+    return user
+  },
+
+  async logout() {
+    try {
+      // Get the refresh token from local storage
+      const refreshToken = localStorage.getItem('refresh_token');
+      if (!refreshToken) {
+        throw new Error('No refresh token found');
+      }
+
+      // Send logout request with both tokens
+      const response = await api.post('/api/auth/logout/', {
+        refresh: refreshToken
+      });
+
+      // Clear tokens from local storage
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
+      
+      // Reset axios default authorization header
+      api.defaults.headers.common['Authorization'] = '';
+      
+      return response.data;
+    } catch (error) {
+      // Even if the server request fails, clear local storage
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
+      api.defaults.headers.common['Authorization'] = '';
+      
+      throw error;
+    }
+  },
+
+  async getProfile() {
+    const response = await api.get('/api/auth/profile/')
+    return response.data
+  },
+
+  async updateProfile(userData) {
+    const response = await api.patch('/api/auth/profile/', userData)
+    return response.data
+  }
 }
 
 // User API
@@ -134,4 +177,5 @@ export const settingsAPI = {
   updateSettings: (data) => api.put('/api/settings/', data),
 }
 
+// Export the api instance for other services to use
 export default api

@@ -15,30 +15,25 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path, include, re_path
+from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from rest_framework_simplejwt.views import TokenRefreshView
 from django.views.generic import TemplateView
-
-api_patterns = [
-    path('', include('campsites.urls')),
-    path('auth/', include('users.urls')),
-    path('', include('bookings.urls')),
-]
 
 urlpatterns = [
     # Admin URLs
     path('admin/', admin.site.urls),
     
-    # API URLs - all under /api prefix
-    path('api/', include(api_patterns)),
+    # API endpoints
+    path('api/auth/', include('users.urls')),  # JWT auth endpoints
+    path('api/campsites/', include('campsites.urls')),
+    path('api/bookings/', include('bookings.urls')),
     
-    # Serve media files in development
-    *static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT),
-    
-    # Catch all routes - let frontend handle routing
-    re_path(r'^.*$', TemplateView.as_view(template_name='index.html'), name='frontend'),
-]
+    # Frontend catch-all
+    path('', TemplateView.as_view(template_name='index.html'), name='index'),
+    path('<path:path>', TemplateView.as_view(template_name='index.html'), name='index-paths'),
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 # Add debug toolbar URLs in development
 if settings.DEBUG:
