@@ -1,24 +1,19 @@
 from rest_framework import serializers
-from .models import Booking, Review
-
-class ReviewSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Review
-        fields = ['id', 'booking', 'rating', 'comment', 'created_at']
-        read_only_fields = ['booking']
+from .models import Booking
 
 class BookingSerializer(serializers.ModelSerializer):
-    review = ReviewSerializer(read_only=True)
+    user = serializers.ReadOnlyField(source='user.username')
+    campsite_name = serializers.ReadOnlyField(source='campsite.name')
     
     class Meta:
         model = Booking
         fields = [
-            'id', 'user', 'campsite', 'check_in_date', 'check_out_date',
-            'number_of_guests', 'status', 'total_price', 'created_at',
-            'updated_at', 'review'
+            'id', 'user', 'campsite', 'campsite_name', 'check_in_date',
+            'check_out_date', 'number_of_guests', 'status', 'total_price',
+            'created_at', 'updated_at'
         ]
-        read_only_fields = ['user', 'total_price', 'status']
-        
+        read_only_fields = ['user', 'total_price', 'created_at', 'updated_at']
+
     def validate(self, data):
         """
         Check that check_in_date is before check_out_date.

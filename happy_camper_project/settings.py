@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     'users.apps.UsersConfig',
     'campsites.apps.CampsitesConfig',
     'bookings.apps.BookingsConfig',
+    'reviews',  # Add reviews app
 ]
 
 MIDDLEWARE = [

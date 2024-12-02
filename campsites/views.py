@@ -4,8 +4,8 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Avg
-from .models import Campsite, CampsiteImage, Review
-from .serializers import CampsiteSerializer, CampsiteImageSerializer, ReviewSerializer
+from .models import Campsite, CampsiteImage
+from .serializers import CampsiteSerializer, CampsiteImageSerializer
 from .permissions import IsCampsiteOwnerOrReadOnly
 from .filters import CampsiteFilter
 
@@ -61,32 +61,13 @@ class CampsiteViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(featured_campsites, many=True)
         return Response(serializer.data)
     
-    @action(detail=True, methods=['post'])
-    def review(self, request, pk=None):
-        """Add a review to a campsite"""
-        campsite = self.get_object()
-        
-        # Check if user has already reviewed this campsite
-        if Review.objects.filter(campsite=campsite, user=request.user).exists():
-            return Response(
-                {'detail': 'You have already reviewed this campsite'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        serializer = ReviewSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save(campsite=campsite, user=request.user)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
     @action(detail=True, methods=['get'])
-    def reviews(self, request, pk=None):
-        """Get all reviews for a campsite"""
+    def images(self, request, pk=None):
         campsite = self.get_object()
-        reviews = Review.objects.filter(campsite=campsite)
-        serializer = ReviewSerializer(reviews, many=True)
+        images = campsite.images.all()
+        serializer = CampsiteImageSerializer(images, many=True)
         return Response(serializer.data)
-        
+    
     @action(detail=True, methods=['post'])
     def toggle_featured(self, request, pk=None):
         """Toggle featured status of a campsite (staff only)"""
@@ -123,7 +104,7 @@ class CampsiteViewSet(viewsets.ModelViewSet):
 class CampsiteImageViewSet(viewsets.ModelViewSet):
     queryset = CampsiteImage.objects.all()
     serializer_class = CampsiteImageSerializer
-    permission_classes = [permissions.IsAuthenticated, IsCampsiteOwnerOrReadOnly]
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly, IsCampsiteOwnerOrReadOnly]
     
     def get_queryset(self):
         return CampsiteImage.objects.filter(
@@ -131,9 +112,10 @@ class CampsiteImageViewSet(viewsets.ModelViewSet):
         )
     
     def perform_create(self, serializer):
-        campsite = Campsite.objects.get(pk=self.kwargs.get('campsite_pk'))
+        from django.shortcuts import get_object_or_404
+        campsite = get_object_or_404(Campsite, pk=self.kwargs.get('campsite_pk'))
         if campsite.owner != self.request.user and not self.request.user.is_staff:
-            raise permissions.PermissionDenied("You don't have permission to add images to this campsite.")
+            raise permissions.PermissionDenied("You do not have permission to add images to this campsite.")
         serializer.save(campsite=campsite)
         
     def perform_update(self, serializer):
@@ -145,26 +127,4 @@ class CampsiteImageViewSet(viewsets.ModelViewSet):
     def perform_destroy(self, instance):
         if instance.campsite.owner != self.request.user and not self.request.user.is_staff:
             raise permissions.PermissionDenied("You don't have permission to delete this image.")
-        instance.delete()
-
-class ReviewViewSet(viewsets.ModelViewSet):
-    queryset = Review.objects.all()
-    serializer_class = ReviewSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
-    
-    def get_queryset(self):
-        return Review.objects.filter(user=self.request.user)
-    
-    def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
-        
-    def perform_update(self, serializer):
-        instance = self.get_object()
-        if instance.user != self.request.user and not self.request.user.is_staff:
-            raise permissions.PermissionDenied("You don't have permission to update this review.")
-        serializer.save()
-        
-    def perform_destroy(self, instance):
-        if instance.user != self.request.user and not self.request.user.is_staff:
-            raise permissions.PermissionDenied("You don't have permission to delete this review.")
         instance.delete()

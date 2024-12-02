@@ -31,7 +31,7 @@ class Campsite(models.Model):
     
     @property
     def average_rating(self):
-        reviews = self.reviews.all()
+        reviews = self.unified_reviews.all()
         if not reviews:
             return None
         return sum(review.rating for review in reviews) / len(reviews)
@@ -48,18 +48,3 @@ class CampsiteImage(models.Model):
     
     def __str__(self):
         return f"Image for {self.campsite.name}"
-
-class Review(models.Model):
-    campsite = models.ForeignKey(Campsite, related_name='reviews', on_delete=models.CASCADE)
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='reviews', on_delete=models.CASCADE)
-    rating = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(5)])
-    comment = models.TextField()
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    
-    class Meta:
-        ordering = ['-created_at']
-        unique_together = ['campsite', 'user']  # One review per user per campsite
-    
-    def __str__(self):
-        return f"{self.user.username}'s review of {self.campsite.name}"

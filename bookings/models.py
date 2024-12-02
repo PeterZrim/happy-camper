@@ -26,12 +26,3 @@ class Booking(models.Model):
     
     def __str__(self):
         return f"{self.user.username} - {self.campsite.name} ({self.check_in_date} to {self.check_out_date})"
-        
-class Review(models.Model):
-    booking = models.OneToOneField(Booking, on_delete=models.CASCADE)
-    rating = models.PositiveIntegerField()
-    comment = models.TextField()
-    created_at = models.DateTimeField(auto_now_add=True)
-    
-    def __str__(self):
-        return f"Review for {self.booking}"

@@ -29,6 +29,7 @@ urlpatterns = [
     path('api/auth/', include('users.urls')),  # JWT auth endpoints
     path('api/campsites/', include('campsites.urls')),
     path('api/bookings/', include('bookings.urls')),
+    path('api/reviews/', include('reviews.urls')),  # Add reviews URLs
     
     # Frontend catch-all
     path('', TemplateView.as_view(template_name='index.html'), name='index'),
