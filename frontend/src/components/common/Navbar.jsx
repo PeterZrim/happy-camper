@@ -17,7 +17,7 @@ import {
 import MenuIcon from '@mui/icons-material/Menu'
 import HomeIcon from '@mui/icons-material/Home'
 
-const pages = ['Campsites', 'About', 'Contact']
+const pages = ['Campsites', 'About', 'Contact', 'Bookings', 'Reviews']
 const settings = ['Profile', 'My Bookings', 'Logout']
 
 function Navbar() {
