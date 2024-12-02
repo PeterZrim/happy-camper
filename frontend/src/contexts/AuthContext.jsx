@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react'
+import React, { createContext, useContext, useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { authAPI, userAPI } from '../services/api'
 
@@ -27,19 +27,16 @@ export function AuthProvider({ children }) {
   }, [])
 
   const login = async (credentials) => {
-    const response = await authAPI.login(credentials)
-    localStorage.setItem('token', response.data.token)
-    const userResponse = await userAPI.getProfile()
-    setUser(userResponse.data)
-    return response
-  }
-
-  const register = async (userData) => {
-    const response = await authAPI.register(userData)
-    localStorage.setItem('token', response.data.token)
-    const userResponse = await userAPI.getProfile()
-    setUser(userResponse.data)
-    return response
+    try {
+      const response = await authAPI.login(credentials)
+      setUser(response.data.user)
+      localStorage.setItem('token', response.data.token)
+      navigate('/')
+      return true
+    } catch (error) {
+      console.error('Login error:', error)
+      return false
+    }
   }
 
   const logout = async () => {
@@ -54,23 +51,36 @@ export function AuthProvider({ children }) {
     }
   }
 
-  const updateProfile = async (data) => {
-    const response = await userAPI.updateProfile(data)
-    setUser(response.data)
-    return response
+  const register = async (userData) => {
+    try {
+      const response = await authAPI.register(userData)
+      setUser(response.data.user)
+      localStorage.setItem('token', response.data.token)
+      navigate('/')
+      return true
+    } catch (error) {
+      console.error('Registration error:', error)
+      return false
+    }
   }
 
   const value = {
     user,
     loading,
     login,
-    register,
     logout,
-    updateProfile,
-    isAuthenticated: !!user,
+    register,
   }
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+  if (loading) {
+    return <div>Loading...</div>
+  }
+
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  )
 }
 
 export function useAuth() {

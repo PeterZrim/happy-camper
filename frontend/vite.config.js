@@ -4,15 +4,26 @@ import { resolve } from 'path'
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react({
+      jsxRuntime: 'automatic',
+      jsxImportSource: 'react',
+      babel: {
+        plugins: [
+          ['@babel/plugin-transform-react-jsx', { runtime: 'automatic' }]
+        ]
+      }
+    })
+  ],
   root: '.',
   base: '',
   publicDir: 'public',
   build: {
     outDir: 'dist',
-    assetsDir: 'static',
+    assetsDir: 'assets',
     manifest: true,
     emptyOutDir: true,
+    sourcemap: true,
     rollupOptions: {
       input: {
         main: resolve(__dirname, 'index.html'),
@@ -26,10 +37,12 @@ export default defineConfig({
     }
   },
   server: {
+    port: 5173,
     proxy: {
       '/api': {
         target: 'http://localhost:8000',
         changeOrigin: true,
+        secure: false
       }
     }
   },

@@ -12,7 +12,7 @@ const api = axios.create({
 // Add request interceptor to add auth token
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('access_token')
+    const token = localStorage.getItem('token')
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }
@@ -45,14 +45,14 @@ api.interceptors.response.use(
         })
 
         const { access } = response.data
-        localStorage.setItem('access_token', access)
+        localStorage.setItem('token', access)
 
         // Retry original request with new token
         originalRequest.headers.Authorization = `Bearer ${access}`
         return api(originalRequest)
       } catch (error) {
         // If refresh fails, logout user
-        localStorage.removeItem('access_token')
+        localStorage.removeItem('token')
         localStorage.removeItem('refresh_token')
         window.location.href = '/login'
         return Promise.reject(error)
@@ -68,7 +68,7 @@ export const authAPI = {
   async login(credentials) {
     const response = await api.post('/api/auth/token/', credentials)
     const { access, refresh, user } = response.data
-    localStorage.setItem('access_token', access)
+    localStorage.setItem('token', access)
     localStorage.setItem('refresh_token', refresh)
     return user
   },
@@ -76,7 +76,7 @@ export const authAPI = {
   async register(userData) {
     const response = await api.post('/api/auth/register/', userData)
     const { tokens, user } = response.data
-    localStorage.setItem('access_token', tokens.access)
+    localStorage.setItem('token', tokens.access)
     localStorage.setItem('refresh_token', tokens.refresh)
     return user
   },
@@ -95,7 +95,7 @@ export const authAPI = {
       });
 
       // Clear tokens from local storage
-      localStorage.removeItem('access_token');
+      localStorage.removeItem('token');
       localStorage.removeItem('refresh_token');
       
       // Reset axios default authorization header
@@ -104,7 +104,7 @@ export const authAPI = {
       return response.data;
     } catch (error) {
       // Even if the server request fails, clear local storage
-      localStorage.removeItem('access_token');
+      localStorage.removeItem('token');
       localStorage.removeItem('refresh_token');
       api.defaults.headers.common['Authorization'] = '';
       

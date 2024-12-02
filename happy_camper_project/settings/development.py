@@ -1,9 +1,10 @@
 from .base import *
 import environ
+import os
 
 # Initialize environ
 env = environ.Env()
-environ.Env.read_env()
+environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = env('DJANGO_SECRET_KEY', default='django-insecure-development-key-change-this')
@@ -13,17 +14,46 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
+# Add debug toolbar
+INSTALLED_APPS += ['debug_toolbar']
+MIDDLEWARE = ['debug_toolbar.middleware.DebugToolbarMiddleware'] + MIDDLEWARE
+INTERNAL_IPS = ['127.0.0.1']
+
 # Database
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
     }
 }
 
 # CORS Settings for development
-CORS_ALLOW_ALL_ORIGINS = True  # Only for development!
+CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
+CORS_ALLOWED_ORIGIN_REGEXES = []
+CORS_ALLOW_METHODS = [
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
+]
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+]
 
 # Email Backend for development
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
@@ -35,9 +65,13 @@ CSRF_COOKIE_SECURE = False
 
 # Static/Media files
 STATIC_URL = '/static/'
-STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static'),
+]
+
 MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # Rest Framework Settings
 REST_FRAMEWORK = {
@@ -52,12 +86,7 @@ REST_FRAMEWORK = {
         'rest_framework.throttling.UserRateThrottle'
     ],
     'DEFAULT_THROTTLE_RATES': {
-        'anon': '100/hour',  # More lenient for development
-        'user': '1000/hour'
+        'anon': '100/day',
+        'user': '1000/day'
     }
 }
-
-# Debug Toolbar Settings
-INSTALLED_APPS += ['debug_toolbar']
-MIDDLEWARE.insert(0, 'debug_toolbar.middleware.DebugToolbarMiddleware')
-INTERNAL_IPS = ['127.0.0.1']

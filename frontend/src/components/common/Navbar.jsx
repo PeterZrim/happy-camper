@@ -1,211 +1,158 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { Link } from 'react-router-dom'
+import React from 'react'
+import { Link as RouterLink } from 'react-router-dom'
 import {
   AppBar,
   Box,
   Toolbar,
-  IconButton,
   Typography,
-  Menu,
-  Container,
-  Avatar,
   Button,
-  Tooltip,
+  IconButton,
+  Menu,
   MenuItem,
+  Divider,
 } from '@mui/material'
-import MenuIcon from '@mui/icons-material/Menu'
-import HomeIcon from '@mui/icons-material/Home'
+import AccountCircle from '@mui/icons-material/AccountCircle'
+import { useState } from 'react'
+import { useAuth } from '../../contexts/AuthContext'
 
-const pages = ['Campsites', 'About', 'Contact', 'Bookings', 'Reviews']
-const settings = ['Profile', 'My Bookings', 'Logout']
+const Navbar = () => {
+  const [anchorEl, setAnchorEl] = useState(null)
+  const { user, logout } = useAuth()
 
-function Navbar() {
-  const [anchorElNav, setAnchorElNav] = useState(null)
-  const [anchorElUser, setAnchorElUser] = useState(null)
-  const navigate = useNavigate()
-  const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true'
-
-  const handleOpenNavMenu = (event) => {
-    setAnchorElNav(event.currentTarget)
-  }
-  const handleOpenUserMenu = (event) => {
-    setAnchorElUser(event.currentTarget)
+  const handleMenu = (event) => {
+    setAnchorEl(event.currentTarget)
   }
 
-  const handleCloseNavMenu = () => {
-    setAnchorElNav(null)
+  const handleClose = () => {
+    setAnchorEl(null)
   }
 
-  const handleCloseUserMenu = () => {
-    setAnchorElUser(null)
+  const handleLogout = async () => {
+    await logout()
+    handleClose()
   }
 
-  const handleNavigation = (page) => {
-    handleCloseNavMenu()
-    navigate(`/${page.toLowerCase()}`)
+  const isCampsiteOwner = () => {
+    return user?.user_type === 'campsite_owner'
   }
 
-  const handleSettingClick = (setting) => {
-    handleCloseUserMenu()
-    if (setting === 'Logout') {
-      localStorage.removeItem('isLoggedIn')
-      navigate('/login')
-    } else {
-      navigate(`/${setting.toLowerCase().replace(' ', '-')}`)
-    }
-  }
-
-  const handleLoginClick = () => {
-    navigate('/login')
+  const isAdmin = () => {
+    return user?.user_type === 'admin'
   }
 
   return (
-    <AppBar position="static" sx={{ bgcolor: 'primary.main' }}>
-      <Container maxWidth="xl">
-        <Toolbar disableGutters>
-          {/* Desktop Logo */}
-          <HomeIcon sx={{ display: { xs: 'none', md: 'flex' }, mr: 1 }} />
-          <Typography
-            variant="h6"
-            noWrap
-            component="a"
-            href="/"
-            sx={{
-              mr: 2,
-              display: { xs: 'none', md: 'flex' },
-              fontFamily: 'monospace',
-              fontWeight: 700,
-              letterSpacing: '.3rem',
-              color: 'inherit',
-              textDecoration: 'none',
-            }}
+    <AppBar position="static">
+      <Toolbar>
+        <Typography
+          variant="h6"
+          component={RouterLink}
+          to="/"
+          sx={{
+            flexGrow: 1,
+            textDecoration: 'none',
+            color: 'inherit',
+          }}
+        >
+          Happy Camper
+        </Typography>
+
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          <Button
+            color="inherit"
+            component={RouterLink}
+            to="/campsites"
+            sx={{ mr: 2 }}
           >
-            HAPPY CAMPER
-          </Typography>
+            Campsites
+          </Button>
 
-          {/* Mobile Menu */}
-          <Box sx={{ flexGrow: 1, display: { xs: 'flex', md: 'none' } }}>
-            <IconButton
-              size="large"
-              aria-controls="menu-appbar"
-              aria-haspopup="true"
-              onClick={handleOpenNavMenu}
-              color="inherit"
-            >
-              <MenuIcon />
-            </IconButton>
-            <Menu
-              id="menu-appbar"
-              anchorEl={anchorElNav}
-              anchorOrigin={{
-                vertical: 'bottom',
-                horizontal: 'left',
-              }}
-              keepMounted
-              transformOrigin={{
-                vertical: 'top',
-                horizontal: 'left',
-              }}
-              open={Boolean(anchorElNav)}
-              onClose={handleCloseNavMenu}
-              sx={{
-                display: { xs: 'block', md: 'none' },
-              }}
-            >
-              {pages.map((page) => (
-                <MenuItem key={page} onClick={() => handleNavigation(page)}>
-                  <Typography textAlign="center">{page}</Typography>
-                </MenuItem>
-              ))}
-            </Menu>
-          </Box>
-
-          {/* Mobile Logo */}
-          <HomeIcon sx={{ display: { xs: 'flex', md: 'none' }, mr: 1 }} />
-          <Typography
-            variant="h5"
-            noWrap
-            component="a"
-            href="/"
-            sx={{
-              mr: 2,
-              display: { xs: 'flex', md: 'none' },
-              flexGrow: 1,
-              fontFamily: 'monospace',
-              fontWeight: 700,
-              letterSpacing: '.3rem',
-              color: 'inherit',
-              textDecoration: 'none',
-            }}
-          >
-            HC
-          </Typography>
-
-          {/* Desktop Menu */}
-          <Box sx={{ flexGrow: 1, display: { xs: 'none', md: 'flex' } }}>
-            {pages.map((page) => (
+          {user && (
+            <>
               <Button
-                key={page}
-                onClick={() => handleNavigation(page)}
-                sx={{ my: 2, color: 'white', display: 'block' }}
+                color="inherit"
+                component={RouterLink}
+                to="/bookings"
+                sx={{ mr: 2 }}
               >
-                {page}
+                My Bookings
               </Button>
-            ))}
-          </Box>
+              <Button
+                color="inherit"
+                component={RouterLink}
+                to="/reviews"
+                sx={{ mr: 2 }}
+              >
+                Reviews
+              </Button>
+            </>
+          )}
 
-          {/* User Menu */}
-          <Box sx={{ flexGrow: 0 }}>
-            {!isLoggedIn ? (
-              <Box sx={{ display: 'flex', gap: 2 }}>
-                <Button color="inherit" component={Link} to="/login">
-                  Login
-                </Button>
-                <Button
-                  variant="contained"
-                  color="secondary"
-                  component={Link}
-                  to="/signup"
-                  sx={{ color: 'white' }}
+          {user && isCampsiteOwner() && (
+            <Button
+              color="inherit"
+              component={RouterLink}
+              to="/dashboard"
+              sx={{ mr: 2 }}
+            >
+              Dashboard
+            </Button>
+          )}
+
+          {user ? (
+            <div>
+              <IconButton
+                size="large"
+                onClick={handleMenu}
+                color="inherit"
+              >
+                <AccountCircle />
+              </IconButton>
+              <Menu
+                anchorEl={anchorEl}
+                anchorOrigin={{
+                  vertical: 'top',
+                  horizontal: 'right',
+                }}
+                keepMounted
+                transformOrigin={{
+                  vertical: 'top',
+                  horizontal: 'right',
+                }}
+                open={Boolean(anchorEl)}
+                onClose={handleClose}
+              >
+                <MenuItem
+                  component={RouterLink}
+                  to="/profile"
+                  onClick={handleClose}
                 >
-                  Sign Up
-                </Button>
-              </Box>
-            ) : (
-              <>
-                <Tooltip title="Open settings">
-                  <IconButton onClick={handleOpenUserMenu} sx={{ p: 0 }}>
-                    <Avatar alt="User" src="/static/images/avatar/2.jpg" />
-                  </IconButton>
-                </Tooltip>
-                <Menu
-                  sx={{ mt: '45px' }}
-                  id="menu-appbar"
-                  anchorEl={anchorElUser}
-                  anchorOrigin={{
-                    vertical: 'top',
-                    horizontal: 'right',
-                  }}
-                  keepMounted
-                  transformOrigin={{
-                    vertical: 'top',
-                    horizontal: 'right',
-                  }}
-                  open={Boolean(anchorElUser)}
-                  onClose={handleCloseUserMenu}
-                >
-                  {settings.map((setting) => (
-                    <MenuItem key={setting} onClick={() => handleSettingClick(setting)}>
-                      <Typography textAlign="center">{setting}</Typography>
-                    </MenuItem>
-                  ))}
-                </Menu>
-              </>
-            )}
-          </Box>
-        </Toolbar>
-      </Container>
+                  Profile
+                </MenuItem>
+                <Divider />
+                <MenuItem onClick={handleLogout}>Logout</MenuItem>
+              </Menu>
+            </div>
+          ) : (
+            <>
+              <Button
+                color="inherit"
+                component={RouterLink}
+                to="/login"
+                sx={{ mr: 1 }}
+              >
+                Login
+              </Button>
+              <Button
+                color="inherit"
+                component={RouterLink}
+                to="/signup"
+              >
+                Sign Up
+              </Button>
+            </>
+          )}
+        </Box>
+      </Toolbar>
     </AppBar>
   )
 }
