@@ -20,13 +20,30 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.views.generic import TemplateView
 
+api_patterns = [
+    path('', include('campsites.urls')),
+    path('auth/', include('users.urls')),
+    path('', include('bookings.urls')),
+]
+
 urlpatterns = [
     # Admin URLs
     path('admin/', admin.site.urls),
     
-    # API URLs
-    path('api/', include('campsites.urls')),
+    # API URLs - all under /api prefix
+    path('api/', include(api_patterns)),
     
-    # Catch all routes and let frontend handle routing
-    re_path(r'^.*', TemplateView.as_view(template_name='index.html'), name='frontend'),
-] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    # Serve media files in development
+    *static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT),
+    
+    # Catch all routes - let frontend handle routing
+    re_path(r'^.*$', TemplateView.as_view(template_name='index.html'), name='frontend'),
+]
+
+# Add debug toolbar URLs in development
+if settings.DEBUG:
+    try:
+        import debug_toolbar
+        urlpatterns = [path('__debug__/', include(debug_toolbar.urls))] + urlpatterns
+    except ImportError:
+        pass

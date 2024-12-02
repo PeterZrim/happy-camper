@@ -6,16 +6,31 @@ import { resolve } from 'path'
 export default defineConfig({
   plugins: [react()],
   root: '.',
+  base: '',
   publicDir: 'public',
   build: {
     outDir: 'dist',
-    assetsDir: 'assets',
+    assetsDir: 'static',
     manifest: true,
     emptyOutDir: true,
     rollupOptions: {
+      input: {
+        main: resolve(__dirname, 'index.html'),
+      },
       output: {
         manualChunks: undefined,
+        assetFileNames: 'static/[name].[hash].[ext]',
+        chunkFileNames: 'static/[name].[hash].js',
+        entryFileNames: 'static/[name].[hash].js',
       },
+    }
+  },
+  server: {
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+      }
     }
   },
   resolve: {
@@ -26,16 +41,6 @@ export default defineConfig({
       '@services': resolve(__dirname, 'src/services'),
       '@utils': resolve(__dirname, 'src/utils'),
       '@contexts': resolve(__dirname, 'src/contexts')
-    }
-  },
-  server: {
-    port: 3000,
-    proxy: {
-      '/api': {
-        target: 'http://localhost:8000',
-        changeOrigin: true,
-        secure: false
-      }
     }
   }
 })
